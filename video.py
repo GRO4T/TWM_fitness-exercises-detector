@@ -1,17 +1,26 @@
-import numpy as np
+import sys
 import tensorflow as tf
+model = tf.keras.models.load_model("models/model4.tf")
+
+
+import numpy as np
 import cv2
 import mediapipe as mp
 mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
 
-
-model = tf.keras.models.load_model("models/model1.tf")
-cap = cv2.VideoCapture(0)
-
+from counter import Counter
 
 text_color = (124,252,0)
 
+exercise = str(sys.argv[1])
+id = int(sys.argv[2])
+clip_no = str(id).zfill(6)
+
+#cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(f"./data/infinityai_fitness_basic_{exercise}_v1.0/data/{clip_no}.mp4") 
+
+counter = Counter()
 
 with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
     while True:
@@ -32,26 +41,35 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
                 frame_keypoints.append([
                     raw_keypoints[landmark.value].x,
                     raw_keypoints[landmark.value].y,
-                    raw_keypoints[landmark.value].z,
+                    #raw_keypoints[landmark.value].z,
                 ])
 
             prediction = model.predict([frame_keypoints])
 
             number_to_class = {
-                0: "curl",
-                1: "armraise",
+                0: "armraise",
+                1: "bicyclecrunch",
+                2: "birddog",
+                3: "curl",
+                4: "fly",
+                5: "legraise",
+                6: "overheadpress",
+                7: "pushup",
+                8: "squat",
+                9: "superman"
             }
 
             predicted_class = number_to_class[np.argmax(prediction)]
 
-            debug_info = f"{predicted_class}: {prediction}"
+            counter.count(predicted_class, raw_keypoints)
 
             image.flags.writeable = True
             image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-            image = cv2.putText(image, debug_info, (20, 20),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, text_color, 2)
+            image = cv2.putText(image, str(predicted_class), (20, 20),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.4, text_color, 1)
+            image = cv2.putText(image, str(prediction), (20, 40),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.4, text_color, 1)
 
-            # Render detections
             mp_drawing.draw_landmarks(image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS,
                                     mp_drawing.DrawingSpec(color=(245,117,66), thickness=2, circle_radius=2), 
                                     mp_drawing.DrawingSpec(color=(245,66,230), thickness=2, circle_radius=2))
