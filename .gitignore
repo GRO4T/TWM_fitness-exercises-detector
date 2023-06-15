@@ -2,3 +2,4 @@
 infinite_rep_basic
 *data*
 tests/
+*.pyc
