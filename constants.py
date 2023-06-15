@@ -1,0 +1,1 @@
+EXERCISES = ["armraise", "bicyclecrunch", "birddog", "curl", "fly", "legraise", "overheadpress", "pushup", "squat", "superman"]

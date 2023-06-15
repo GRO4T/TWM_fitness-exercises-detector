@@ -1,5 +1,6 @@
 import sys
 import tensorflow as tf
+import collections
 model = tf.keras.models.load_model("models/model4.tf")
 
 
@@ -11,6 +12,19 @@ mp_pose = mp.solutions.pose
 
 from counter import Counter
 
+def dominant(A):
+    x = None
+    count = 0
+    for i in A:
+        if count == 0:
+            x = i
+            count += 1
+        elif i == x:
+            count += 1
+        else:
+            count -= 1
+    return x
+
 text_color = (124,252,0)
 
 exercise = str(sys.argv[1])
@@ -21,6 +35,9 @@ clip_no = str(id).zfill(6)
 cap = cv2.VideoCapture(f"./data/infinityai_fitness_basic_{exercise}_v1.0/data/{clip_no}.mp4") 
 
 counter = Counter()
+
+PREDICTIONS_BUFFER_SIZE = 100 # TODO: Zmniejszyć bufor na 5 i pokazać, że na squat 19 model4 działa lepiej niż model3
+predictions = collections.deque(maxlen=PREDICTIONS_BUFFER_SIZE)
 
 with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
     while True:
@@ -60,6 +77,12 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             }
 
             predicted_class = number_to_class[np.argmax(prediction)]
+
+            predictions.append(predicted_class)
+
+            print(f"predictions: {predictions}")
+
+            predicted_class = dominant(predictions)
 
             counter.count(predicted_class, raw_keypoints)
 
